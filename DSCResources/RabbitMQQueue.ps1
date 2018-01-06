@@ -1,9 +1,8 @@
-[DscResource()]
-class RabbitMQUser
+class RabbitMQQueue
 {
     [DscProperty(Key)]
     [string]
-    $Username
+    $Name
     
     [DscProperty(Mandatory)]
     [string]
@@ -17,18 +16,25 @@ class RabbitMQUser
     [Ensure]
     $Ensure = 'Present'
 
-    [DscProperty()]
-    [pscredential]
-    $Password
-    
-    [DscProperty()]
-    [string[]]
-    $Tag
+    [DSCProperty()]
+    [string]
+    $VirtualHost
 
-    [RabbitMqUser]Get()
+    [DscProperty()]
+    [bool]
+    $Durable
+
+    [DscProperty()]
+    [bool]
+    $Autodelete
+
+    [DscProperty()]
+    [hashtable]
+    $Arguments
+
+    
+    [RabbitMQQueue]Get()
     {
-        $ruser = $this.GetRabbitUser()
-        $this.Tag = $ruser.Tag
 
         return $this
     }
@@ -101,31 +107,23 @@ class RabbitMQUser
         }
     }
 
-    [RabbitMqUser]GetRabbitUser()
+    [RabbitMQ.Queue]GetRabbitUser()
     {
         $getSplat = @{
-            Name    = $this.Username
+            Name    = $this.Name
             BaseUri = $this.BaseUri
             Credential = $this.Credential
         }
-        Write-Verbose -Message "Getting details for rabbit user [$($this.Username)]"
-        $ruser = Get-RabbitMQUser @getSplat
-        return $ruser
+
+        Write-Verbose -Message "Getting details for rabbit queue [$($this.name)]"
+        $rque = Get-RabbitMQQueue @getSplat
+        return $rque
     }
 }
 
-#$cred = (Get-Credential)
-#$userCred = (Get-Credential)
 $VerbosePreference = 'continue'
-$rabUser = New-Object -TypeName rabbitmquser
-$rabUser.Username = $userCred.UserName
-$rabUser.Password = $userCred
-$rabUser.BaseUri = 'http://localhost:15672'
-$rabUser.tag = 'management'
-$rabUser.Credential = $cred
-$rabUser.Ensure = 'absent'
-$rabUser.Get()
-if (-not($rabUser.Test()))
-{
-    $rabUser.Set()
-}
+$rabQue = New-Object -TypeName RabbitMQQueue
+$rabQue.BaseUri = 'http://localhost:15672'
+$rabQue.Credential = $cred
+$rabQue.Name = 'testqueue'
+$rabQue.GetRabbitUser()
